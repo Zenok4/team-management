@@ -14,6 +14,7 @@ export interface Manga {
   cover?: string;
   description?: string;
   totalChapters?: number;
+  completedChapter?: number;
   createdAt?: string;
   updatedAt?: string;
   detetedAt?: string;
@@ -24,7 +25,7 @@ export interface Chapter {
   mangaId?: Manga["id"];
   number?: number;
   title?: string;
-  status?: "pending" | "in-progress" | "completed";
+  status?: "Chưa làm" | "Đang làm" | "Hoàn thành";
   completedAt?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -44,9 +45,9 @@ export interface Member {
 
 export interface ChapterWork {
   id: string;
-  memberId?: Member["id"];
-  chapterId?: Chapter["id"];
-  role?: Role["id"];
+  members?: Member;
+  chapters?: Chapter;
+  roles?: Role;
   status?: "Chưa làm" | "Đang làm" | "Hoàn thành";
   assignedAt?: string;
   completedAt?: string;
@@ -57,11 +58,11 @@ export interface ChapterWork {
 
 export interface Task {
   id: string;
-  mangaId: Manga["id"];
-  chapterId: Chapter["id"];
+  manga: Manga;
+  chapter: Chapter;
   role: Role["label"];
-  assignedTo: string;
-  assignedBy: string;
+  assignedTo: Member;
+  assignedBy: Member;
   status: "pending" | "in-progress" | "submitted" | "approved" | "rejected";
   deadline?: string;
   note?: string;

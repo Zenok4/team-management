@@ -17,8 +17,10 @@ const MainSidebar = () => {
   const pathName = usePathname();
 
   const isActive = (href: string) => {
-    return pathName === href;
+    if (href === "/") return pathName === "/";
+    return pathName.startsWith(href);
   };
+
   return (
     <Sidebar collapsible="icon">
       <SidebarContent className="group">
@@ -31,7 +33,7 @@ const MainSidebar = () => {
               <SidebarMenuButton
                 onClick={() => router.push(item.href)}
                 className={
-                  isActive(item.href) ? "bg-primary/20 hover:bg-primary/30" : ""
+                  isActive(item.href) ? "bg-primary/80 hover:bg-primary/90" : ""
                 }
               >
                 <item.icon className="h-5 w-5" />

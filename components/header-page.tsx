@@ -6,7 +6,7 @@ interface HeaderPageProps {
 
 const HeaderPage = ({title, children, subtitle }:HeaderPageProps) => {
     return (
-        <div className="flex justify-between py-2 items-center">
+        <div className="flex justify-between pb-2 items-center sticky top-0 z-10">
             <div>
                 <p className="text-2xl font-bold">{title}</p>
                 <p className="text-lg">{subtitle}</p>

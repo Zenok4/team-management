@@ -10,7 +10,7 @@ const Logo = () => {
     >
       <BookType className="w-8 h-8" />
       <p className="font-bold text-2xl group-data-[collapsible=icon]:hidden">
-        Title
+        Web Name
       </p>
     </div>
   );
