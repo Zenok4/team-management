@@ -1,48 +1,39 @@
+"use client";
+
 import MangaCard from "@/components/manga-card";
 import HeaderManga from "./_components/header-manga";
+import { getMangas } from "@/services/manga-service";
+import { useEffect, useState } from "react";
 
 const MangaPage = () => {
+  const [mangas, setMangas] = useState<any[]>([]);
+  useEffect(() => {
+    fetchMangas();
+  }, []);
+
+  const fetchMangas = async () => {
+    const data = await getMangas();
+    console.log("Fetched mangas:", data);
+    setMangas(data);
+  };
+
   return (
     <div>
-        <HeaderManga/>
-        <div className="py-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          <MangaCard 
+      <HeaderManga />
+      <div className="py-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {mangas.map((manga) => (
+          <MangaCard
+            key={manga.$id}
             manga={{
-              id: "1",
-              title: "Example Manga",
-              cover: "",
-              totalChapters: 99,
-            }} 
-            completedChapters={31}
+              $id: manga.$id,
+              title: manga.title || "",
+              cover: manga.cover || "",
+              totalChapters: manga.totalChapters || 0,
+            }}
+            completedChapters={manga.completedChapter || 0}
           />
-          <MangaCard 
-            manga={{
-              id: "1",
-              title: "Example Manga",
-              cover: "/example-cover.jpg",
-              totalChapters: 100,
-            }} 
-            completedChapters={45}
-          />
-          <MangaCard 
-            manga={{
-              id: "1",
-              title: "Example Manga",
-              cover: "/example-cover.jpg",
-              totalChapters: 100,
-            }} 
-            completedChapters={45}
-          />
-          <MangaCard 
-            manga={{
-              id: "1",
-              title: "Example Manga",
-              cover: "/example-cover.jpg",
-              totalChapters: 100,
-            }} 
-            completedChapters={45}
-          />
-        </div>
+        ))}
+      </div>
     </div>
   );
 };

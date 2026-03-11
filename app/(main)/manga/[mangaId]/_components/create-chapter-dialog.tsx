@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
 import { Chapter } from "@/types/manga";
 import { useEffect, useState } from "react";
+import { createChapter } from "@/services/chapter-service";
 
 interface CreateChapterDialogProps {
   mangaId?: string;
@@ -41,13 +42,15 @@ const CreateChapterDialog = ({
     setChapterTitle("");
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Xử lý logic tạo chapter mới ở đây
-    console.log("Tạo chapter mới:", {
-      mangaId,
-      chapterNumber,
-      chapterTitle,
+    if (!mangaId) return;
+    await createChapter({
+      mangaId: mangaId,
+      number: chapterNumber,
+      title: chapterTitle,
     });
+    setOpen(false);
   };
 
   const findNextChapterNumber = () => {
@@ -57,7 +60,7 @@ const CreateChapterDialog = ({
       return maxNumber + 1;
     }
     return 0;
-  }
+  };
 
   return (
     <Dialog

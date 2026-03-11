@@ -10,7 +10,6 @@ interface HeaderMangaPageProps {
   totalChapters?: number;
   completedChapters?: number;
   mangaId?: string;
-  mangaTitle?: string;
   chapter?: Chapter[];
 }
 
@@ -21,7 +20,6 @@ const HeaderMangaPage = ({
   totalChapters,
   completedChapters,
   mangaId,
-  mangaTitle,
   chapter,
 }: HeaderMangaPageProps) => {
   return (
@@ -41,7 +39,7 @@ const HeaderMangaPage = ({
           </div>
         </div>
       </div>
-      <CreateChapterDialog mangaId={mangaId} mangaTitle={mangaTitle} chapter={chapter}/>
+      <CreateChapterDialog mangaId={mangaId} mangaTitle={title} chapter={chapter}/>
     </div>
   );
 };

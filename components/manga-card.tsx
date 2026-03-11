@@ -24,7 +24,7 @@ const MangaCard = ({ manga, completedChapters }: MangaCardProps) => {
   return (
     <Card
       className="group cursor-pointer overflow-hidden transition-all hover:shadow-lg hover:border-primary/50 hover:scale-[1.02]"
-      onClick={() => router.push(`/manga/${manga.id}`)}
+      onClick={() => router.push(`/manga/${manga.$id}`)}
     >
       <CardHeader className="p-0">
         <div className="relative aspect-7/10 w-full overflow-hidden">

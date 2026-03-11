@@ -9,7 +9,7 @@ export interface Role {
 }
 
 export interface Manga {
-  id: string;
+  $id: string;
   title?: string;
   cover?: string;
   description?: string;
@@ -22,10 +22,10 @@ export interface Manga {
 
 export interface Chapter {
   id: string;
-  mangaId?: Manga["id"];
+  mangaId?: Manga["$id"];
   number?: number;
   title?: string;
-  status?: "Chưa làm" | "Đang làm" | "Hoàn thành";
+  status?: "pending" | "in-process" | "completed";
   completedAt?: string;
   createdAt?: string;
   updatedAt?: string;

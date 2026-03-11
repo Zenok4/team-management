@@ -5,6 +5,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import MainHeader from "@/components/main-header";
 import { Separator } from "@/components/ui/separator";
 import MainSidebar from "@/components/main-sidebar";
+import { AuthProvider } from "@/context/AuthContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,14 +32,16 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SidebarProvider>
-          <MainSidebar />
-          <div className="flex flex-col p-4 gap-2 w-full">
-            <MainHeader />
-            <Separator orientation="horizontal" className="w-full mb-2"/>
-            {children}
-          </div>
-        </SidebarProvider>
+        <AuthProvider>
+            <SidebarProvider>
+              <MainSidebar />
+              <div className="flex flex-col p-4 gap-2 w-full">
+                <MainHeader />
+                <Separator orientation="horizontal" className="w-full mb-2" />
+                {children}
+              </div>
+            </SidebarProvider>
+        </AuthProvider>
       </body>
     </html>
   );

@@ -6,9 +6,9 @@ interface OverrallMangaProps {
 }
 
 const OverrallManga = ({ chapters }: OverrallMangaProps) => {
-  const completed = chapters.filter((c) => c.status === "Hoàn thành").length;
-  const inProgress = chapters.filter((c) => c.status === "Đang làm").length;
-  const pending = chapters.filter((c) => c.status === "Chưa làm").length;
+  const completed = chapters.filter((c) => c.status === "completed").length;
+  const inProgress = chapters.filter((c) => c.status === "in-process").length;
+  const pending = chapters.filter((c) => c.status === "pending").length;
   const total = chapters.length;
 
   const completedPercent = total > 0 ? (completed / total) * 100 : 0;

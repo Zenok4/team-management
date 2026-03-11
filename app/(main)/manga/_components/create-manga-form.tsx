@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { createManga } from "@/services/manga-service";
 import { CircleX, ImagePlus, Plus } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
@@ -61,10 +62,10 @@ const CreateMangaForm = () => {
     e.preventDefault();
   };
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // Thay bằng dialog thông báo
-    console.log("Tạo truyện thành công!");
+    await createManga(formData.title, formData.description, formData.cover);
     resetForm();
   };
 

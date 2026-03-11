@@ -11,7 +11,7 @@ const MangaDetailPage = async ({ params }: MangaDetailPageProps) => {
 
   console.log("MangaDetailPage mangaId:", mangaId);
 
-  // 1. Fetch DB / Supabase
+  // 1. Fetch DB
   // const manga = await getMangaById(mangaId);
 
   // 2. Auth / permission
