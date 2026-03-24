@@ -25,9 +25,11 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ChapterWork, Member, Role } from "@/types/manga";
-import { CalendarIcon, UserPlus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { CalendarIcon, Upload, UserPlus, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
+import { createTask } from "@/services/task-service";
+import { useAuth } from "@/context/AuthContext";
 
 interface AssignTaskDialogProps {
   mangaId?: string;
@@ -50,19 +52,24 @@ const AssignTaskDialog = ({
   const [selectedRole, setSelectedRole] = useState("");
   const [deadline, setDeadline] = useState<Date>();
   const [note, setNote] = useState("");
+  const [taskFiles, setTaskFiles] = useState<File[]>([]);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { user } = useAuth();
 
   // Lọc các role chưa được giao trong chapter này
   const assignedRoles = chapter?.members?.roles;
-  const assignedRoleIds = new Set(assignedRoles?.map((role) => role.id));
+  const assignedRoleIds = new Set(assignedRoles?.map((role) => role.$id));
   //role khả dụng
   const availableRoles = roles?.filter((role) => {
     // role đã được gán trong chapter → loại
-    if (assignedRoleIds.has(role.id)) return false;
+    if (assignedRoleIds.has(role.$id)) return false;
 
     // nếu đã chọn member → member phải có role này
     if (selectedMember) {
-      const member = members?.find((m) => m.id === selectedMember);
-      return member?.roles?.some((r) => r.id === role.id);
+      const member = members?.find((m) => m.$id === selectedMember);
+      return member?.roles?.some((r) => r.$id === role.$id);
     }
 
     return true;
@@ -73,14 +80,14 @@ const AssignTaskDialog = ({
     if (!member.roles || member.roles.length === 0) return false;
 
     const memberAvailableRoles = member.roles.filter(
-      (r) => !assignedRoleIds.has(r.id),
+      (r) => !assignedRoleIds.has(r.$id),
     );
 
     if (memberAvailableRoles.length === 0) return false;
 
     // nếu đã chọn role → member phải có role đó
     if (selectedRole) {
-      return memberAvailableRoles.some((r) => r.id === selectedRole);
+      return memberAvailableRoles.some((r) => r.$id === selectedRole);
     }
 
     return true;
@@ -89,9 +96,9 @@ const AssignTaskDialog = ({
   useEffect(() => {
     if (!selectedMember || !selectedRole) return;
 
-    const member = members?.find((m) => m.id === selectedMember);
+    const member = members?.find((m) => m.$id === selectedMember);
     const isValid = member?.roles?.some(
-      (r) => r.id === selectedRole && !assignedRoleIds.has(r.id),
+      (r) => r.$id === selectedRole && !assignedRoleIds.has(r.$id),
     );
 
     if (!isValid) {
@@ -99,10 +106,38 @@ const AssignTaskDialog = ({
     }
   }, [selectedMember]);
 
-  const handleSubmit = () => {
+  const handleFileAdd = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files || []);
+    setTaskFiles((prev) => [...prev, ...selectedFiles]);
+    e.target.value = "";
+  };
+
+  const removeFile = (index: number) => {
+    setTaskFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async () => {
     if (!selectedMember || !selectedRole) return;
 
-    // Reset form
+    if (!mangaId || !chapter?.chapters?.$id) {
+      return;
+    }
+
+    await createTask({
+      chapterId: chapter?.chapters?.$id,
+      memberId: selectedMember,
+      roleId: selectedRole,
+      deadline: deadline || new Date(),
+      note: note,
+      assignedBy: user.$id,
+      mangaId: mangaId,
+      taskFiles: taskFiles,
+    });
+
     resetForm();
     setOpen(false);
   };
@@ -112,6 +147,7 @@ const AssignTaskDialog = ({
     setSelectedRole("");
     setDeadline(undefined);
     setNote("");
+    setTaskFiles([]);
   };
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -147,7 +183,7 @@ const AssignTaskDialog = ({
               <SelectContent>
                 {availableRoles && availableRoles.length > 0 ? (
                   availableRoles.map((role) => (
-                    <SelectItem key={role.id} value={role.id}>
+                    <SelectItem key={role.$id} value={role.$id}>
                       <div className="flex items-center gap-2">
                         <Badge
                           style={
@@ -181,7 +217,7 @@ const AssignTaskDialog = ({
               <SelectContent>
                 {availableMembers &&
                   availableMembers.map((member) => (
-                    <SelectItem key={member.id} value={member.id}>
+                    <SelectItem key={member.$id} value={member.$id}>
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
                           <AvatarImage
@@ -196,7 +232,7 @@ const AssignTaskDialog = ({
                           {member.roles?.length &&
                             member?.roles.map((r) => (
                               <Badge
-                                key={r.id}
+                                key={r.$id}
                                 variant="outline"
                                 className="text-xs py-0"
                               >
@@ -247,6 +283,50 @@ const AssignTaskDialog = ({
               onChange={(e) => setNote(e.target.value)}
               rows={3}
             />
+          </div>
+
+          {/* File đính kèm */}
+          <div className="space-y-2">
+            <Label>File đính kèm</Label>
+
+            <Input
+              type="file"
+              multiple
+              ref={fileInputRef}
+              className="hidden"
+              onChange={handleFileChange}
+            />
+
+            <Button
+              variant="outline"
+              className="w-full gap-2 bg-transparent"
+              onClick={handleFileAdd}
+            >
+              <Upload className="h-4 w-4" />
+              Thêm file
+            </Button>
+
+            {taskFiles.length > 0 && (
+              <div className="space-y-2">
+                {taskFiles.map((file, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between rounded-md border px-3 py-2 text-sm min-w-full"
+                  >
+                    <span className="truncate">{file.name}</span>
+
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6"
+                      onClick={() => removeFile(index)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

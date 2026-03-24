@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import { useMemo } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
+import { useEffect, useMemo, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   Calendar,
   Clock,
@@ -13,18 +13,20 @@ import {
   CheckCircle,
   XCircle,
   Play,
-} from "lucide-react"
+} from "lucide-react";
 
-import { Task } from "@/types/manga"
-import { TASK_STATUS_LABELS } from "@/types/manga"
-import { MOCK_ROLES } from "@/mock/mock-data"
-import { SubmitTaskDialog } from "@/app/(main)/task/_components/summit-task-dialog"
+import { Member, Role, Task } from "@/types/manga";
+import { TASK_STATUS_LABELS } from "@/types/manga";
+import { SubmitTaskDialog } from "@/app/(main)/task/_components/summit-task-dialog";
+import { reviewTask, startTask } from "@/services/task-service";
 
 /* ================= PROPS ================= */
 interface TaskCardProps {
-  task: Task
-  showAssignee?: boolean
-  onStatusChange?: (taskId: string, status: Task["status"]) => void
+  task: Task;
+  showAssignee?: boolean;
+  onStatusChange?: (taskId: string, status: Task["status"]) => void;
+  roles: Role[];
+  user: Member;
 }
 
 /* ================= STATUS STYLES ================= */
@@ -34,24 +36,54 @@ const STATUS_STYLES: Record<Task["status"], string> = {
   submitted: "bg-blue-100 text-blue-700 border-blue-200",
   approved: "bg-green-100 text-green-700 border-green-200",
   rejected: "bg-red-100 text-red-700 border-red-200",
-}
+};
 
 /* ================= COMPONENT ================= */
 export function TaskCard({
   task,
   showAssignee = true,
   onStatusChange,
+  roles,
+  user,
 }: TaskCardProps) {
+  const [isRejecting, setIsRejecting] = useState(false);
+  const [rejectNote, setRejectNote] = useState("");
+
+  useEffect(() => {
+    if (!roles || roles.length === 0) return;
+  }, [roles]);
+
   const isOverdue =
     task.deadline &&
     new Date(task.deadline) < new Date() &&
-    !["approved", "submitted"].includes(task.status)
+    !["approved", "submitted"].includes(task.status);
 
   /* ===== resolve role ===== */
   const role = useMemo(
-    () => MOCK_ROLES.find((r) => r.label === task.role),
-    [task.role]
-  )
+    () => roles.find((r) => r.$id === task.role.$id),
+    [task.role],
+  );
+
+  const handleStartTask = async (task: Task) => {
+    await startTask(task.$id);
+    onStatusChange?.(task.$id, "in-progress");
+  };
+
+  const handleApproveTask = async (task: Task) => {
+    await reviewTask(task.$id, "approved");
+    onStatusChange?.(task.$id, "approved");
+  };
+
+  //Function handleRejectTask được chuyển lên trên để có thể tái sử dụng trong cả TaskCard và SubmitTaskDialog
+  const handleRejectTask = async (task: Task, note: string) => {
+    if (!rejectNote.trim()) return;
+    await reviewTask(task.$id, "rejected", note);
+    onStatusChange?.(task.$id, "rejected");
+    setIsRejecting(false);
+    setRejectNote("");
+  };
+
+  console.log("Rendering TaskCard for role:", role); // Debug log
 
   return (
     <Card
@@ -76,10 +108,7 @@ export function TaskCard({
               </Badge>
             )}
 
-            <Badge
-              variant="outline"
-              className={STATUS_STYLES[task.status]}
-            >
+            <Badge variant="outline" className={STATUS_STYLES[task.status]}>
               {TASK_STATUS_LABELS[task.status]}
             </Badge>
 
@@ -92,7 +121,7 @@ export function TaskCard({
 
           <h4 className="font-medium truncate">{task.manga.title}</h4>
           <p className="text-sm text-muted-foreground">
-            Chapter {task.chapter.number}: {task.chapter.title}
+            Chapter {task.chapters.number}: {task.chapters.title}
           </p>
         </div>
 
@@ -100,9 +129,7 @@ export function TaskCard({
         {showAssignee && task.assignedTo && (
           <div className="flex items-center gap-2">
             <Avatar className="h-6 w-6">
-              <AvatarImage
-                src={task.assignedTo.avatar || "/placeholder.svg"}
-              />
+              <AvatarImage src={task.assignedTo.avatar || "/placeholder.svg"} />
               <AvatarFallback className="text-xs">
                 {task.assignedTo.name?.charAt(0)}
               </AvatarFallback>
@@ -121,8 +148,7 @@ export function TaskCard({
             >
               <Calendar className="h-3.5 w-3.5" />
               <span>
-                Hạn:{" "}
-                {new Date(task.deadline).toLocaleDateString("vi-VN")}
+                Hạn: {new Date(task.deadline).toLocaleDateString("vi-VN")}
               </span>
             </div>
           )}
@@ -131,8 +157,8 @@ export function TaskCard({
             <Clock className="h-3.5 w-3.5" />
             <span>
               Giao:{" "}
-              {task.createdAt
-                ? new Date(task.createdAt).toLocaleDateString("vi-VN")
+              {task.$createdAt
+                ? new Date(task.$createdAt).toLocaleDateString("vi-VN")
                 : "N/A"}
             </span>
           </div>
@@ -163,11 +189,7 @@ export function TaskCard({
             {task.submittedFiles && task.submittedFiles.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {task.submittedFiles.map((file, i) => (
-                  <Badge
-                    key={i}
-                    variant="secondary"
-                    className="text-xs gap-1"
-                  >
+                  <Badge key={i} variant="secondary" className="text-xs gap-1">
                     <FileText className="h-3 w-3" />
                     {file.name}
                   </Badge>
@@ -180,10 +202,12 @@ export function TaskCard({
         {/* ===== Rejected reason ===== */}
         {task.status === "rejected" && task.reviewNote && (
           <div className="pt-3 bg-red-50 px-4 pb-4 rounded-lg">
-            <p className="text-xs font-medium text-red-700">
+            <p className="text-sm  font-semibold text-red-700 mb-1">
               Lý do yêu cầu sửa:
             </p>
-            <p className="text-sm text-red-600">{task.reviewNote}</p>
+            <p className="text-sm text-red-600 leading-relaxed">
+              {task.reviewNote}
+            </p>
           </div>
         )}
 
@@ -193,50 +217,84 @@ export function TaskCard({
             <Button
               size="sm"
               variant="outline"
-              className="gap-1 bg-transparent"
-              onClick={() =>
-                onStatusChange?.(task.id, "in-progress")
-              }
+              className="gap-1 bg-transparent cursor-pointer"
+              disabled={task.assignedTo?.userId !== user.$id}
+              onClick={() => handleStartTask(task)}
             >
               <Play className="h-3.5 w-3.5" />
               Bắt đầu làm
             </Button>
           )}
 
-          {(task.status === "in-progress" ||
-            task.status === "rejected") && (
-            <SubmitTaskDialog task={task} />
+          {(task.status === "in-progress" || task.status === "rejected") && role && (
+            <SubmitTaskDialog
+              role={role}
+              task={task}
+              user={user}
+              onStatusChange={onStatusChange}
+            />
           )}
 
           {task.status === "submitted" && (
             <>
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1 text-green-600 hover:text-green-700 bg-transparent"
-                onClick={() =>
-                  onStatusChange?.(task.id, "approved")
-                }
-              >
-                <CheckCircle className="h-3.5 w-3.5" />
-                Duyệt
-              </Button>
+              {!isRejecting ? (
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1 text-green-600 hover:text-white bg-transparent"
+                    onClick={() => handleApproveTask(task)}
+                  >
+                    <CheckCircle className="h-3.5 w-3.5" />
+                    Duyệt
+                  </Button>
 
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1 text-red-600 hover:text-red-700 bg-transparent"
-                onClick={() =>
-                  onStatusChange?.(task.id, "rejected")
-                }
-              >
-                <XCircle className="h-3.5 w-3.5" />
-                Yêu cầu sửa
-              </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1 text-red-600 hover:text-white bg-transparent"
+                    onClick={() => setIsRejecting(true)}
+                  >
+                    <XCircle className="h-3.5 w-3.5" />
+                    Yêu cầu sửa
+                  </Button>
+                </>
+              ) : (
+                <div className="flex flex-col gap-2 w-full">
+                  <input
+                    className="border rounded px-2 py-1 text-sm"
+                    placeholder="Nhập lý do cần sửa..."
+                    value={rejectNote}
+                    onChange={(e) => setRejectNote(e.target.value)}
+                  />
+
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-red-600"
+                      onClick={() => handleRejectTask(task, rejectNote)}
+                    >
+                      Gửi
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setIsRejecting(false);
+                        setRejectNote("");
+                      }}
+                    >
+                      Hủy
+                    </Button>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

@@ -33,3 +33,37 @@ export const createManga = async (title: string, description: string, cover: str
   });
   return res;
 }
+
+export const increaseMangaChapterCount = async (mangaId: string) => {
+  const manga = await databases.getDocument(
+    DB_ID,
+    MANGA_COLLECTION,
+    mangaId
+  );
+
+  return await databases.updateDocument(
+    DB_ID,
+    MANGA_COLLECTION,
+    mangaId,
+    {
+      totalChapters: (manga.totalChapters ?? 0) + 1,
+    }
+  );
+};
+
+export const increaseCompletedChapterCount = async (mangaId: string) => {
+  const manga = await databases.getDocument(
+    DB_ID,
+    MANGA_COLLECTION,
+    mangaId
+  );
+
+  return await databases.updateDocument(
+    DB_ID,
+    MANGA_COLLECTION,
+    mangaId,
+    {
+      completedChapters: (manga.completedChapters ?? 0) + 1,
+    }
+  );
+};

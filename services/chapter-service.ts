@@ -1,6 +1,8 @@
 import { databases, ID } from "@/lib/appwrite";
 import { DB_ID, CHAPTER_COLLECTION } from "@/types/collections";
 import { Query } from "appwrite";
+import { createChapterWork } from "./chapter-work-service";
+import { increaseMangaChapterCount } from "./manga-service";
 
 export const getChaptersByMangaId = async (mangaId: string) => {
   const res = await databases.listDocuments({
@@ -21,17 +23,39 @@ export const createChapter = async ({
   title?: string;
   mangaId: string;
 }) => {
-  const res = await databases.createDocument({
-    databaseId: DB_ID,
-    collectionId: CHAPTER_COLLECTION,
-    documentId: ID.unique(),
-    data: {
-      number,
-      title,
-      manga: mangaId,
-      status: "pending",
-    },
-  });
+  let chapterId: string | null = null;
 
-  return res;
+  try {
+    const chapter = await databases.createDocument({
+      databaseId: DB_ID,
+      collectionId: CHAPTER_COLLECTION,
+      documentId: ID.unique(),
+      data: {
+        number,
+        title: title ?? null,
+        manga: mangaId,
+      },
+    });
+
+    chapterId = chapter.$id;
+
+    await Promise.all([
+      createChapterWork({
+        chapterId: chapter.$id,
+        mangaId,
+      }),
+      increaseMangaChapterCount(mangaId),
+    ]);
+
+    return chapter;
+  } catch (err) {
+    if (chapterId) {
+      await databases.deleteDocument(
+        DB_ID,
+        CHAPTER_COLLECTION,
+        chapterId
+      );
+    }
+    throw err;
+  }
 };

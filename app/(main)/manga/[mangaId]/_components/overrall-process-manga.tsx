@@ -7,7 +7,7 @@ interface OverrallMangaProps {
 
 const OverrallManga = ({ chapters }: OverrallMangaProps) => {
   const completed = chapters.filter((c) => c.status === "completed").length;
-  const inProgress = chapters.filter((c) => c.status === "in-process").length;
+  const inProgress = chapters.filter((c) => c.status === "in-progress").length;
   const pending = chapters.filter((c) => c.status === "pending").length;
   const total = chapters.length;
 

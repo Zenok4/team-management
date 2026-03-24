@@ -32,13 +32,13 @@ const ListChapters = ({
   const router = useRouter();
 
   /**
-   * 🔑 GROUP ChapterWork theo chapter.id
+   * 🔑 GROUP ChapterWork theo chapter.$id
    * 1 chapter => nhiều work (nhiều role / nhiều member)
    */
   const chapterMap = new Map<string, ChapterWork[]>();
 
   chapterWork?.forEach((work) => {
-    const chapterId = work.chapters?.id;
+    const chapterId = work.chapters?.$id;
     if (!chapterId) return;
 
     if (!chapterMap.has(chapterId)) {
@@ -63,8 +63,8 @@ const ListChapters = ({
               <TableHead className="w-1/5">Tiêu đề</TableHead>
               <TableHead>Trạng thái</TableHead>
 
-              {roles?.map((role) => (
-                <TableHead key={role.id} className="w-1/12 text-center">
+              {roles && roles?.map((role) => (
+                <TableHead key={role.$id} className="w-1/12 text-center">
                   <Badge
                     style={
                       { "--role-color": role.color } as React.CSSProperties
@@ -84,6 +84,7 @@ const ListChapters = ({
           <TableBody>
             {groupedChapters.map(([chapterId, works]) => {
               const chapter = works[0]; // đại diện chapter
+              console.log("Chapter:", chapter);
 
               return (
                 <TableRow
@@ -91,7 +92,7 @@ const ListChapters = ({
                   className="cursor-pointer"
                   onClick={() =>
                     router.push(
-                      `/manga/${mangaId}/chapter/${chapter.chapters?.id}`,
+                      `/manga/${mangaId}/chapter/${chapter.chapters?.$id}`,
                     )
                   }
                 >
@@ -106,7 +107,7 @@ const ListChapters = ({
                   {/* ===== STATUS ===== */}
                   <TableCell>
                     {(() => {
-                      const status = chapter.status ?? "Chưa làm";
+                      const status = chapter.status ?? "pending";
                       const config = STATUS_CONFIG[status];
                       if (!config) return null;
 
@@ -126,12 +127,12 @@ const ListChapters = ({
 
                   {/* ===== ROLES ===== */}
                   {roles?.map((role) => {
-                    const work = works.find((w) =>
-                      w.members?.roles?.some((r) => r.id === role.id),
-                    );
+                    const work = works.find((w) => w.roles?.$id === role.$id);
+
+                    console.log(`Work for role ${role.label}:`, work);
 
                     return (
-                      <TableCell key={role.id}>
+                      <TableCell key={role.$id}>
                         {work && (
                           <div className="flex justify-center">
                             <div className="relative">
@@ -148,9 +149,9 @@ const ListChapters = ({
 
                               <div
                                 className={`absolute -bottom-0.5 -right-0.5 rounded-full p-0.5 ${
-                                  work.status === "Hoàn thành"
+                                  work.status === "completed"
                                     ? "bg-green-500"
-                                    : work.status === "Đang làm"
+                                    : work.status === "in-progress"
                                       ? "bg-amber-500"
                                       : "bg-gray-400"
                                 }`}

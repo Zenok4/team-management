@@ -1,10 +1,10 @@
 export interface Role {
-  id: string;
+  $id: string;
   label: string;
   description?: string;
   color?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  $createdAt?: string;
+  $updatedAt?: string;
   detetedAt?: string;
 }
 
@@ -15,52 +15,53 @@ export interface Manga {
   description?: string;
   totalChapters?: number;
   completedChapter?: number;
-  createdAt?: string;
-  updatedAt?: string;
+  $createdAt?: string;
+  $updatedAt?: string;
   detetedAt?: string;
 }
 
 export interface Chapter {
-  id: string;
+  $id: string;
   mangaId?: Manga["$id"];
   number?: number;
   title?: string;
-  status?: "pending" | "in-process" | "completed";
+  status?: "pending" | "in-progress" | "completed";
   completedAt?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  $createdAt?: string;
+  $updatedAt?: string;
   detetedAt?: string;
 }
 
 export interface Member {
-  id: string;
+  $id: string;
+  userId?: string;
   name?: string;
   avatar?: string;
   roles?: Role[];
   joinedAt?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  $createdAt?: string;
+  $updatedAt?: string;
   detetedAt?: string;
 }
 
 export interface ChapterWork {
-  id: string;
+  $id: string;
   members?: Member;
   chapters?: Chapter;
   roles?: Role;
-  status?: "Chưa làm" | "Đang làm" | "Hoàn thành";
+  status?: "pending" | "in-progress" | "completed";
   assignedAt?: string;
   completedAt?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  $createdAt?: string;
+  $updatedAt?: string;
   detetedAt?: string;
 }
 
 export interface Task {
-  id: string;
+  $id: string;
   manga: Manga;
-  chapter: Chapter;
-  role: Role["label"];
+  chapters: Chapter;
+  role: Role;
   assignedTo: Member;
   assignedBy: Member;
   status: "pending" | "in-progress" | "submitted" | "approved" | "rejected";
@@ -71,8 +72,8 @@ export interface Task {
   submittedFiles?: File[];
   reviewedAt?: string;
   reviewNote?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  $createdAt?: string;
+  $updatedAt?: string;
   detetedAt?: string;
 }
 

@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useState, useMemo } from "react"
-import { Search, Filter } from "lucide-react"
+import { useState, useMemo, use } from "react";
+import { Search, Filter } from "lucide-react";
 
 import {
   Select,
@@ -9,20 +9,21 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { TaskCard } from "@/components/task-card"
+import { TaskCard } from "@/components/task-card";
 
-import { Task, Member, Manga, Role } from "@/types/manga"
+import { Task, Member, Manga, Role } from "@/types/manga";
+import { useAuth } from "@/context/AuthContext";
 
 interface TasksContentProps {
-  initialTasks: Task[]
-  members: Member[]
-  mangas: Manga[]
-  roles: Role[]
+  initialTasks: Task[];
+  members: Member[];
+  mangas: Manga[];
+  roles: Role[];
 }
 
 function EmptyState({ message }: { message: string }) {
@@ -30,7 +31,7 @@ function EmptyState({ message }: { message: string }) {
     <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
       <p className="text-muted-foreground">{message}</p>
     </div>
-  )
+  );
 }
 
 export function TasksContent({
@@ -39,60 +40,57 @@ export function TasksContent({
   mangas,
   roles,
 }: TasksContentProps) {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks)
-  const [filterMember, setFilterMember] = useState("all")
-  const [filterManga, setFilterManga] = useState("all")
-  const [searchQuery, setSearchQuery] = useState("")
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [filterMember, setFilterMember] = useState("all");
+  const [filterManga, setFilterManga] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const handleStatusChange = (
-    taskId: string,
-    newStatus: Task["status"]
-  ) => {
+  const { user } = useAuth();
+
+  useMemo(() => {
+    if (!initialTasks || !mangas || !members || !roles) return;
+  }, []);
+
+  const handleStatusChange = (taskId: string, newStatus: Task["status"]) => {
     setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId ? { ...t, status: newStatus } : t
-      )
-    )
-  }
+      prev.map((t) => (t.$id === taskId ? { ...t, status: newStatus } : t)),
+    );
+  };
 
   /** Map nhanh role label -> role object */
   const roleMap = useMemo(() => {
-    return Object.fromEntries(
-      roles.map((r) => [r.label, r])
-    ) as Record<string, Role>
-  }, [roles])
+    return Object.fromEntries(roles.map((r) => [r.label, r])) as Record<
+      string,
+      Role
+    >;
+  }, [roles]);
 
   const filteredTasks = tasks.filter((task) => {
-    if (filterMember !== "all" && task.assignedTo.id !== filterMember)
-      return false
+    if (filterMember !== "all" && task.assignedTo.$id !== filterMember)
+      return false;
 
-    if (filterManga !== "all" && task.manga.id !== filterManga)
-      return false
+    if (filterManga !== "all" && task.manga.$id !== filterManga) return false;
 
     if (searchQuery) {
-      const q = searchQuery.toLowerCase()
+      const q = searchQuery.toLowerCase();
       return (
         task.manga.title?.toLowerCase().includes(q) ||
-        task.chapter.title?.toLowerCase().includes(q) ||
-        task.role.toLowerCase().includes(q)
-      )
+        task.chapters.title?.toLowerCase().includes(q) ||
+        task.role.label?.toLowerCase().includes(q)
+      );
     }
 
-    return true
-  })
+    return true;
+  });
 
-  const pendingTasks = filteredTasks.filter(
-    (t) => t.status === "pending"
-  )
+  const pendingTasks = filteredTasks.filter((t) => t.status === "pending");
   const inProgressTasks = filteredTasks.filter(
-    (t) => t.status === "in-progress"
-  )
-  const submittedTasks = filteredTasks.filter(
-    (t) => t.status === "submitted"
-  )
+    (t) => t.status === "in-progress",
+  );
+  const submittedTasks = filteredTasks.filter((t) => t.status === "submitted");
   const completedTasks = filteredTasks.filter((t) =>
-    ["approved", "rejected"].includes(t.status)
-  )
+    ["approved", "rejected"].includes(t.status),
+  );
 
   return (
     <div className="space-y-6">
@@ -117,7 +115,7 @@ export function TasksContent({
           <SelectContent>
             <SelectItem value="all">Tất cả thành viên</SelectItem>
             {members.map((m) => (
-              <SelectItem key={m.id} value={m.id}>
+              <SelectItem key={m.$id} value={m.$id}>
                 {m.name}
               </SelectItem>
             ))}
@@ -133,7 +131,7 @@ export function TasksContent({
           <SelectContent>
             <SelectItem value="all">Tất cả bộ truyện</SelectItem>
             {mangas.map((m) => (
-              <SelectItem key={m.id} value={m.id}>
+              <SelectItem key={m.$id} value={m.$id}>
                 {m.title}
               </SelectItem>
             ))}
@@ -161,7 +159,11 @@ export function TasksContent({
         {(
           [
             ["pending", pendingTasks, "Không có công việc nào đang chờ nhận"],
-            ["in-progress", inProgressTasks, "Không có công việc nào đang thực hiện"],
+            [
+              "in-progress",
+              inProgressTasks,
+              "Không có công việc nào đang thực hiện",
+            ],
             ["submitted", submittedTasks, "Không có công việc nào chờ duyệt"],
             ["completed", completedTasks, "Chưa có công việc nào được xử lý"],
           ] as const
@@ -171,9 +173,11 @@ export function TasksContent({
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {list.map((task) => (
                   <TaskCard
-                    key={task.id}
+                    key={task.$id}
                     task={task}
                     onStatusChange={handleStatusChange}
+                    roles={roles}
+                    user={user}
                   />
                 ))}
               </div>
@@ -184,5 +188,5 @@ export function TasksContent({
         ))}
       </Tabs>
     </div>
-  )
+  );
 }

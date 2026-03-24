@@ -1,19 +1,14 @@
 "use client";
 
-import {
-  MOCK_CHAPTER,
-  MOCK_CHAPTER_WORK,
-  MOCK_MANGA,
-  MOCK_MEMBERS,
-  MOCK_ROLES,
-} from "@/mock/mock-data";
 import HeaderMangaPage from "./_components/header-manga-page";
 import ListChapters from "./_components/list-chapters";
 import OverrallManga from "./_components/overrall-process-manga";
-import { Chapter, ChapterWork } from "@/types/manga";
 import { getMangaById } from "@/services/manga-service";
 import { useEffect, useState } from "react";
 import { getChaptersByMangaId } from "@/services/chapter-service";
+import { getChapterWorksByMangaId } from "@/services/chapter-work-service";
+import { getRoles } from "@/services/role-service";
+import { getMembers } from "@/services/member-service";
 
 interface MangaClientProps {
   mangaId: string;
@@ -21,25 +16,40 @@ interface MangaClientProps {
 
 const MangaClient = ({ mangaId }: MangaClientProps) => {
   const [manga, setManga] = useState<any>();
-  const roles = MOCK_ROLES;
-  const members = MOCK_MEMBERS;
+  const [roles, setRoles] = useState<any>([]);
+  const [members, setMembers] = useState<any>([]);
   const [chapters, setChapters] = useState<any>([]);
-  const chapterWork = MOCK_CHAPTER_WORK as ChapterWork[];
-
-  const fetchMangaDetails = async (id: string) => {
-    const data = await getMangaById(id);
-    setManga(data);
-  };
-
-  const fetchChapters = async (id: string) => {
-    const data = await getChaptersByMangaId(id);
-    setChapters(data);
-  };
+  const [chapterWork, setChapterWork] = useState<any>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchMangaDetails(mangaId);
-    fetchChapters(mangaId);
+    const fetchData = async () => {
+      setLoading(true);
+
+      const [mangaData, chaptersData, chapterWorkData, rolesData, membersData] =
+        await Promise.all([
+          getMangaById(mangaId),
+          getChaptersByMangaId(mangaId),
+          getChapterWorksByMangaId(mangaId),
+          getRoles(),
+          getMembers(),
+        ]);
+
+      setManga(mangaData);
+      setChapters(chaptersData);
+      setChapterWork(chapterWorkData);
+      setRoles(rolesData);
+      setMembers(membersData);
+
+      setLoading(false);
+    };
+
+    fetchData();
   }, [mangaId]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -57,13 +67,15 @@ const MangaClient = ({ mangaId }: MangaClientProps) => {
 
       {chapters && <OverrallManga chapters={chapters} />}
 
-      <ListChapters
-        roles={roles}
-        members={members}
-        chapterWork={chapterWork}
-        mangaId={mangaId}
-        mangaTitle={manga?.title}
-      />
+      {!loading && (
+        <ListChapters
+          roles={roles}
+          members={members}
+          chapterWork={chapterWork}
+          mangaId={mangaId}
+          mangaTitle={manga?.title}
+        />
+      )}
     </div>
   );
 };

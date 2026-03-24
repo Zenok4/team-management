@@ -1,17 +1,17 @@
 import { AlertCircle, CheckCircle2, Circle, Clock, FileText } from "lucide-react";
 
 export const STATUS_CONFIG = {
-  "Hoàn thành": {
+  "completed": {
     label: "Hoàn thành",
     icon: CheckCircle2,
     className: "bg-green-100 text-green-700 border-green-200",
   },
-  "Đang làm": {
+  "in-progress": {
     label: "Đang làm",
     icon: Clock,
     className: "bg-amber-100 text-amber-700 border-amber-200",
   },
-  "Chưa làm": {
+  "pending": {
     label: "Chưa làm",
     icon: Circle,
     className: "bg-gray-100 text-gray-600 border-gray-200",

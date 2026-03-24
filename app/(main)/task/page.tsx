@@ -1,7 +1,8 @@
-import TaskClinet from "./TaskClient";
+import TaskClient from "./TaskClient";
+
 
 const TaskPage = () => {
-  return <TaskClinet />;
+  return <TaskClient />;
 };
 
 export default TaskPage;

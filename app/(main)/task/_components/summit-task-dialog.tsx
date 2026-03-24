@@ -1,70 +1,78 @@
-"use client"
+"use client";
 
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Upload, FileText, X } from "lucide-react"
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Upload, FileText, X } from "lucide-react";
 
-import { Task } from "@/types/manga"
-import { MOCK_ROLES } from "@/mock/mock-data"
+import { Member, Role, Task } from "@/types/manga";
+import { MOCK_ROLES } from "@/mock/mock-data";
+import { submitTask } from "@/services/task-service";
+import { Input } from "@/components/ui/input";
 
 /* ================= PROPS ================= */
 interface SubmitTaskDialogProps {
-  task: Task
-  onSubmit?: (data: { note: string; files: File[] }) => void
+  task: Task;
+  user: Member;
+  role: Role;
+  onStatusChange?: (taskId: string, status: Task["status"]) => void;
 }
 
 /* ================= COMPONENT ================= */
 export function SubmitTaskDialog({
   task,
-  onSubmit,
+  user,
+  role,
+  onStatusChange,
 }: SubmitTaskDialogProps) {
-  const [open, setOpen] = useState(false)
-  const [note, setNote] = useState("")
-  const [files, setFiles] = useState<File[]>([])
-
-  /* ===== resolve role from mock ===== */
-  const role = useMemo(
-    () => MOCK_ROLES.find((r) => r.label === task.role),
-    [task.role]
-  )
+  const [open, setOpen] = useState(false);
+  const [note, setNote] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
 
   /* ===== handlers ===== */
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const handleFileAdd = () => {
-    // mock file (sau này thay bằng input[type=file])
-    const file = new File(
-      ["mock content"],
-      `file_${Date.now()}.txt`,
-      { type: "text/plain" }
-    )
-    setFiles((prev) => [...prev, file])
-  }
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files || []);
+    setFiles((prev) => [...prev, ...selectedFiles]);
+  };
 
   const handleFileRemove = (index: number) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index))
-  }
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
 
-  const handleSubmit = () => {
-    onSubmit?.({ note, files })
-    setNote("")
-    setFiles([])
-    setOpen(false)
-  }
+  const handleSubmit = async () => {
+    await submitTask(task.$id, files, note);
+    setNote("");
+    setFiles([]);
+    onStatusChange?.(task.$id, "submitted");
+    setOpen(false);
+  };
+
+  console.log({ task, user });
 
   /* ================= RENDER ================= */
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="gap-1.5">
+        <Button
+          size="sm"
+          className="gap-1.5"
+          disabled={task.assignedTo.userId !== user.$id}
+        >
           <Upload className="h-4 w-4" />
           Nộp bài
         </Button>
@@ -79,9 +87,7 @@ export function SubmitTaskDialog({
           {/* ===== Task info ===== */}
           <div className="rounded-lg bg-muted/50 p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium">
-                {task.manga.title}
-              </p>
+              <p className="text-sm font-medium">{task.manga.title}</p>
 
               {role && (
                 <Badge
@@ -98,13 +104,12 @@ export function SubmitTaskDialog({
             </div>
 
             <p className="text-sm text-muted-foreground">
-              Chapter {task.chapter.number}: {task.chapter.title}
+              Chapter {task.chapters.number}: {task.chapters.title}
             </p>
 
             {task.deadline && (
               <p className="text-xs text-muted-foreground">
-                Hạn nộp:{" "}
-                {new Date(task.deadline).toLocaleDateString("vi-VN")}
+                Hạn nộp: {new Date(task.deadline).toLocaleDateString("vi-VN")}
               </p>
             )}
           </div>
@@ -147,14 +152,24 @@ export function SubmitTaskDialog({
                 </div>
               ))}
 
-              <Button
-                variant="outline"
-                className="w-full gap-2 bg-transparent"
-                onClick={handleFileAdd}
-              >
-                <Upload className="h-4 w-4" />
-                Thêm file
-              </Button>
+              <>
+                <Input
+                  type="file"
+                  multiple
+                  ref={fileInputRef}
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 bg-transparent"
+                  onClick={handleFileAdd}
+                >
+                  <Upload className="h-4 w-4" />
+                  Thêm file
+                </Button>
+              </>
             </div>
           </div>
 
@@ -178,5 +193,5 @@ export function SubmitTaskDialog({
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

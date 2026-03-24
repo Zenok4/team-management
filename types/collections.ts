@@ -10,3 +10,4 @@ export const CHAPTER_COLLECTION = 'chapters';
 export const MANGA_COLLECTION = 'manga';
 export const MEMBER_COLLECTION = 'members';
 export const CHAPTER_WORK_COLLECTION = 'chapter_work';
+export const ROLE_COLLECTION = 'roles';
