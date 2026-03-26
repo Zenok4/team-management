@@ -3,7 +3,8 @@ export const downloadBinaryFile = (
   filename: string,
   type: string
 ) => {
-  const blob = new Blob([buffer], { type });
+  //ignore
+  const blob = new Blob([buffer as BlobPart], { type });
 
   const url = URL.createObjectURL(blob);
 

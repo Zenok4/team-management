@@ -3,7 +3,7 @@ import { downloadTaskFile } from "./dowload-file-s3";
 
 export const createZipFromS3Files = async (
   fileUrls: string[],
-  zipName = "files.zip"
+  zipName = "files.zip",
 ) => {
   if (!fileUrls?.length) return null;
 
@@ -11,14 +11,16 @@ export const createZipFromS3Files = async (
     fileUrls.map(async (url) => {
       const key = url.split("/").pop()!;
       return downloadTaskFile(key);
-    })
+    }),
   );
 
   const zip = new JSZip();
 
-  files.forEach((file) => {
-    zip.file(file.filename, file.buffer);
-  });
+  files
+    .filter((file) => file?.buffer)
+    .forEach((file) => {
+      zip.file(file.filename, file.buffer!);
+    });
 
   const zipBuffer = await zip.generateAsync({ type: "uint8array" });
 
