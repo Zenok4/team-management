@@ -1,7 +1,8 @@
 "use client";
 
 import authService from '@/services/auth-service';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 type AuthContextType = {
   user: any | null;
@@ -20,12 +21,14 @@ export const AuthProvider: React.FC<{
 }> = ({ children }) => {
   const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter()
 
   const loadUser = async () => {
     setLoading(true);
     const u = await authService.getCurrentUser();
     setUser(u);
     setLoading(false);
+    if (!u) router.push("/login");
   };
 
   useEffect(() => {

@@ -13,13 +13,12 @@ const MangaPage = () => {
 
   const fetchMangas = async () => {
     const data = await getMangas();
-    console.log("Fetched mangas:", data);
     setMangas(data);
   };
 
   return (
     <div>
-      <HeaderManga />
+      <HeaderManga onMangaCreated={fetchMangas}/>
       <div className="py-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {mangas.map((manga) => (
           <MangaCard
@@ -30,7 +29,7 @@ const MangaPage = () => {
               cover: manga.cover || "",
               totalChapters: manga.totalChapters || 0,
             }}
-            completedChapters={manga.completedChapter || 0}
+            completedChapters={manga.completedChapters || 0}
           />
         ))}
       </div>

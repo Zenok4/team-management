@@ -115,6 +115,8 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -122,4 +124,75 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Scrollbar beautification */
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: #1e1e2a;
+    border-radius: 999px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #7f5af0, #4f46e5);
+    border-radius: 999px;
+    border: 2px solid #0f172a;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #9d7cfb, #7c3aed);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #7f5af0 #1e1e2a;
+  }
+
+  :root {
+    scrollbar-color: #7f5af0 #1e1e2a;
+  }
+
+  .dark * {
+    scrollbar-color: #a855f7 #0f172a;
+  }
+}
+
+@property --border-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.animated-border {
+  position: relative;
+}
+
+.animated-border::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--border-angle),
+    transparent 0%,
+    transparent 60%,
+    rgba(255, 255, 255, 0.8) 75%,
+    transparent 90%,
+    transparent 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: rotateBorder 4s linear infinite;
+}
+
+@keyframes rotateBorder {
+  to { --border-angle: 360deg; }
 }

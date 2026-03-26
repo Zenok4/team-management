@@ -80,7 +80,7 @@ export function SubmitTaskDialog({
 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Nộp công việc</DialogTitle>
+          <DialogTitle>Nộp Task</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -136,15 +136,15 @@ export function SubmitTaskDialog({
                   key={index}
                   className="flex items-center justify-between rounded-lg border bg-background p-2"
                 >
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{file.name}</span>
+                  <div className="flex items-center gap-2 max-w-xs">
+                    <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="text-sm truncate">{file.name}</span>
                   </div>
 
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6"
+                    className="h-6 w-6 shirnk-0"
                     onClick={() => handleFileRemove(index)}
                   >
                     <X className="h-4 w-4" />

@@ -7,7 +7,10 @@ import {
 } from "@/types/collections";
 import { Query } from "appwrite";
 import { getMemberId } from "./member-service";
-import { uploadFile } from "@/helper/upload-file";
+import { createZipFromS3Files } from "@/helper/createZipFromS3Files";
+import { sendDiscordWebhook } from "@/lib/discord";
+import { increaseCompletedChapterCount } from "./manga-service";
+import { uploadToS3 } from "@/helper/uploadToS3";
 
 export const getTasks = async () => {
   const res = await databases.listDocuments({
@@ -52,7 +55,7 @@ export const createTask = async (data: {
   const assignedBy = await getMemberId(data.assignedBy);
 
   const uploadedUrls = await Promise.all(
-    data.taskFiles.map((file) => uploadFile(file))
+    data.taskFiles.map((file) => uploadToS3(file)),
   );
 
   // 1️⃣ tạo task
@@ -117,66 +120,64 @@ export const createTask = async (data: {
     });
   }
 
+  await databases.updateDocument({
+    databaseId: DB_ID,
+    collectionId: CHAPTER_COLLECTION,
+    documentId: data.chapterId,
+    data: { status: "in-progress" },
+  });
+
   // 5️⃣ gửi notification qua Discord
-  await fetch(process.env.NEXT_PUBLIC_DISCORD_WEBHOOK!, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      content: `<@${task.assignedTo.discordId}> có task mới`,
-      embeds: [
-        {
-          title: "📢 Task mới được giao",
-          color: 5814783,
-          fields: [
-            {
-              name: "Chapter",
-              value: `Chapter ${task.chapters.number}`,
-              inline: true,
-            },
-            {
-              name: "Role",
-              value: task.role.label,
-              inline: true,
-            },
-            {
-              name: "Người giao",
-              value: task.assignedTo.name,
-              inline: true,
-            },
-            {
-              name: "Hạn nộp",
-              value: new Date(task.deadline).toLocaleDateString(),
-              inline: true,
-            },
-            {
-              name: "Note",
-              value: task.note || "Không có",
-            },
-          ],
-        },
-      ],
-    }),
+  await sendDiscordWebhook({
+    content: `<@${task.assignedTo.discordId}> có task mới`,
+    embeds: [
+      {
+        title: "📢 Task mới được giao",
+        color: 5814783,
+        fields: [
+          {
+            name: "Chapter",
+            value: `${task.chapters.number}`,
+            inline: true,
+          },
+          {
+            name: "Role",
+            value: task.role.label,
+            inline: true,
+          },
+          {
+            name: "Người giao",
+            value: task.assignedBy.name,
+            inline: true,
+          },
+          {
+            name: "Hạn nộp",
+            value: new Date(task.deadline).toLocaleDateString(),
+            inline: true,
+          },
+          {
+            name: "Note",
+            value: task.note || "Không có",
+          },
+        ],
+        timestamp: new Date().toISOString(),
+      },
+    ],
   });
 
   return task;
 };
 
 export const startTask = async (taskId: string) => {
-  // update task trước để lấy chapterId
   const task = await databases.updateDocument({
     databaseId: DB_ID,
     collectionId: TASK_COLLECTION,
     documentId: taskId,
-    data: {
-      status: "in-progress",
-    },
+    data: { status: "in-progress" },
   });
 
   const chapterId = task.chapters.$id;
 
-  // chạy song song
   const [_, chapterWorkRes] = await Promise.all([
     databases.updateDocument({
       databaseId: DB_ID,
@@ -188,10 +189,7 @@ export const startTask = async (taskId: string) => {
     databases.listDocuments({
       databaseId: DB_ID,
       collectionId: CHAPTER_WORK_COLLECTION,
-      queries: [
-        Query.equal("task", taskId),
-        Query.limit(1), // tránh lấy dư
-      ],
+      queries: [Query.equal("task", taskId), Query.limit(1)],
     }),
   ]);
 
@@ -204,7 +202,15 @@ export const startTask = async (taskId: string) => {
     });
   }
 
-  return task;
+  const zip = await createZipFromS3Files(
+    task.taskFiles || [],
+    `task-${taskId}.zip`,
+  );
+
+  return {
+    ...task,
+    zip,
+  };
 };
 
 export const reviewTask = async (
@@ -212,7 +218,7 @@ export const reviewTask = async (
   status: "approved" | "rejected",
   reviewNote?: string,
 ) => {
-  return await databases.updateDocument({
+  const res = await databases.updateDocument({
     databaseId: DB_ID,
     collectionId: TASK_COLLECTION,
     documentId: taskId,
@@ -222,6 +228,96 @@ export const reviewTask = async (
       reviewNote: reviewNote ?? null,
     },
   });
+
+  await increaseCompletedChapterCount(res.manga.$id);
+
+  // =========================
+  // Nếu task được approved
+  // =========================
+  if (status === "approved") {
+    // tìm chapter_work của task
+    const chapterWorkRes = await databases.listDocuments({
+      databaseId: DB_ID,
+      collectionId: CHAPTER_WORK_COLLECTION,
+      queries: [Query.equal("task", taskId), Query.limit(1)],
+    });
+
+    if (chapterWorkRes.documents.length) {
+      const chapterWork = chapterWorkRes.documents[0];
+      const chapterId = chapterWork.chapters;
+
+      // lấy tất cả chapter_work của chapter
+      const allChapterWorks = await databases.listDocuments({
+        databaseId: DB_ID,
+        collectionId: CHAPTER_WORK_COLLECTION,
+        queries: [Query.equal("chapters", chapterId)],
+      });
+
+      const isAllCompleted = allChapterWorks.documents.every(
+        (cw) => cw.status === "completed",
+      );
+
+      // nếu tất cả completed -> update chapter
+      if (isAllCompleted) {
+        // update chapter_work
+        await databases.updateDocument({
+          databaseId: DB_ID,
+          collectionId: CHAPTER_WORK_COLLECTION,
+          documentId: chapterWork.$id,
+          data: {
+            status: "completed",
+          },
+        });
+
+        // update chapter
+        await databases.updateDocument({
+          databaseId: DB_ID,
+          collectionId: CHAPTER_COLLECTION,
+          documentId: chapterId,
+          data: {
+            status: "completed",
+          },
+        });
+      }
+    }
+  }
+
+  // Nếu task bị rejected → gửi notification qua Discord
+  if (status === "rejected") {
+    await sendDiscordWebhook({
+      content: `<@${res.assignedTo.discordId}> task của bạn được yêu cầu sửa lại bởi <@${res.assignedBy.discordId}>, hãy kiểm tra và nộp lại nhé!`,
+      embeds: [
+        {
+          title: "Task bị từ chối",
+          color: 16711680,
+          fields: [
+            {
+              name: "Chapter",
+              value: `${res.chapters.number}`,
+              inline: true,
+            },
+            {
+              name: "Role",
+              value: res.role.label,
+              inline: true,
+            },
+            {
+              name: "Người review",
+              value: res.assignedBy.name,
+              inline: true,
+            },
+            {
+              name: "Ghi chú",
+              value: reviewNote || "Không có",
+            },
+          ],
+          timestamp: new Date().toISOString(),
+        },
+      ],
+    });
+  }
+
+  return res;
 };
 
 export const submitTask = async (
@@ -229,22 +325,73 @@ export const submitTask = async (
   files: File[],
   note?: string,
 ) => {
-
-  const uploadedUrls = await Promise.all(
-    files.map((file) => uploadFile(file))
-  );
+  const uploadedUrls = await Promise.all(files.map((file) => uploadToS3(file)));
 
   const task = await databases.updateDocument({
     databaseId: DB_ID,
     collectionId: TASK_COLLECTION,
     documentId: taskId,
     data: {
-      submittedFiles: uploadedUrls,
+      ...(files.length > 0 && { submittedFiles: uploadedUrls }),
       submittedAt: new Date().toISOString(),
       noteSubmited: note ?? null,
       status: "submitted",
     },
   });
 
+  await sendDiscordWebhook({
+    content: `<@${task.assignedBy?.discordId}> task đã được nộp bởi <@${task.assignedTo?.discordId}>, hãy kiểm tra và review nhé!`,
+    embeds: [
+      {
+        title: "Task đã được nộp",
+        color: 3447003,
+        fields: [
+          {
+            name: "Task ID",
+            value: task.$id,
+            inline: true,
+          },
+          {
+            name: "Chapter",
+            value: task.chapters?.number,
+            inline: true,
+          },
+          {
+            name: "Người nộp",
+            value: task.assignedTo?.name,
+            inline: true,
+          },
+          {
+            name: "Ghi chú",
+            value: note || "Không có",
+          },
+        ],
+        timestamp: new Date().toISOString(),
+      },
+    ],
+  });
+
   return task;
+};
+
+export const downloadSubmittedFiles = async (taskId: string) => {
+  const task = await databases.getDocument({
+    databaseId: DB_ID,
+    collectionId: TASK_COLLECTION,
+    documentId: taskId,
+  });
+
+  if (!task.submittedFiles || task.submittedFiles.length === 0) {
+    throw new Error("Task chưa có file nộp");
+  }
+
+  const zip = await createZipFromS3Files(
+    task.submittedFiles,
+    `submitted-task-${taskId}.zip`,
+  );
+
+  return {
+    ...task,
+    zip,
+  };
 };

@@ -51,6 +51,20 @@ const MangaClient = ({ mangaId }: MangaClientProps) => {
     return <div>Loading...</div>;
   }
 
+  const fetchChapters = async () => {
+    const [chaptersData, chapterWorkData] = await Promise.all([
+      getChaptersByMangaId(mangaId),
+      getChapterWorksByMangaId(mangaId),
+    ]);
+    setChapters(chaptersData);
+    setChapterWork(chapterWorkData);
+  };
+
+  const fetchChapterWork = async () => {
+    const chapterWorkData = await getChapterWorksByMangaId(mangaId);
+    setChapterWork(chapterWorkData);
+  };
+
   return (
     <div className="flex flex-col gap-6">
       {manga && (
@@ -62,6 +76,7 @@ const MangaClient = ({ mangaId }: MangaClientProps) => {
           totalChapters={manga.totalChapters}
           chapter={chapters}
           mangaId={mangaId}
+          onChapterCreated={fetchChapters}
         />
       )}
 
@@ -74,6 +89,7 @@ const MangaClient = ({ mangaId }: MangaClientProps) => {
           chapterWork={chapterWork}
           mangaId={mangaId}
           mangaTitle={manga?.title}
+          onTaskCreated={fetchChapterWork}
         />
       )}
     </div>

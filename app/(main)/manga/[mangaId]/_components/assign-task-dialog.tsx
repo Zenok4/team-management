@@ -34,9 +34,10 @@ import { useAuth } from "@/context/AuthContext";
 interface AssignTaskDialogProps {
   mangaId?: string;
   mangaTitle?: string;
-  chapter?: ChapterWork;
+  chapter?: ChapterWork[];
   roles?: Role[];
   members?: Member[];
+  onSuccess?: () => void;
 }
 
 const AssignTaskDialog = ({
@@ -45,6 +46,7 @@ const AssignTaskDialog = ({
   mangaTitle,
   roles,
   members,
+  onSuccess,
 }: AssignTaskDialogProps) => {
   const [open, setOpen] = useState(false);
   const [openCal, setOpenCal] = useState(false);
@@ -59,8 +61,9 @@ const AssignTaskDialog = ({
   const { user } = useAuth();
 
   // Lọc các role chưa được giao trong chapter này
-  const assignedRoles = chapter?.members?.roles;
-  const assignedRoleIds = new Set(assignedRoles?.map((role) => role.$id));
+  const assignedRoleIds = new Set(
+    chapter?.map((cw) => cw.roles?.$id).filter(Boolean) ?? [],
+  );
   //role khả dụng
   const availableRoles = roles?.filter((role) => {
     // role đã được gán trong chapter → loại
@@ -74,6 +77,7 @@ const AssignTaskDialog = ({
 
     return true;
   });
+  console.log({ chapter });
 
   //lọc ra các member có thể chọn (có role phù hợp)
   const availableMembers = members?.filter((member) => {
@@ -123,12 +127,12 @@ const AssignTaskDialog = ({
   const handleSubmit = async () => {
     if (!selectedMember || !selectedRole) return;
 
-    if (!mangaId || !chapter?.chapters?.$id) {
+    if (!mangaId || !chapter?.[0]?.chapters?.$id) {
       return;
     }
 
     await createTask({
-      chapterId: chapter?.chapters?.$id,
+      chapterId: chapter?.[0]?.chapters?.$id,
       memberId: selectedMember,
       roleId: selectedRole,
       deadline: deadline || new Date(),
@@ -140,6 +144,7 @@ const AssignTaskDialog = ({
 
     resetForm();
     setOpen(false);
+    onSuccess?.();
   };
 
   const resetForm = () => {
@@ -166,7 +171,8 @@ const AssignTaskDialog = ({
           <div className="rounded-lg bg-muted/50 p-3">
             <p className="text-sm font-medium">{mangaTitle}</p>
             <p className="text-sm text-muted-foreground">
-              Chương {chapter?.chapters?.number}: {chapter?.chapters?.title}
+              Chương {chapter?.[0]?.chapters?.number}:{" "}
+              {chapter?.[0]?.chapters?.title}
             </p>
           </div>
 

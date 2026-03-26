@@ -11,6 +11,7 @@ interface HeaderMangaPageProps {
   completedChapters?: number;
   mangaId?: string;
   chapter?: Chapter[];
+  onChapterCreated?: () => void;
 }
 
 const HeaderMangaPage = ({
@@ -21,12 +22,18 @@ const HeaderMangaPage = ({
   completedChapters,
   mangaId,
   chapter,
+  onChapterCreated,
 }: HeaderMangaPageProps) => {
   return (
     <div className="flex justify-between gap-10">
       <div className="flex gap-4 min-w-0">
         <div className="relative h-60 w-42 rounded-md shrink-0">
-          <Image src={coverUrl || "/heroine.jpeg"} alt={title || ""} fill className="rounded-md object-cover"/>
+          <Image
+            src={coverUrl || "/heroine.jpeg"}
+            alt={title || ""}
+            fill
+            className="rounded-md object-cover"
+          />
         </div>
         <div className="flex flex-col gap-1 min-w-0">
           <p className="text-3xl font-bold text-wrap">{title}</p>
@@ -39,7 +46,12 @@ const HeaderMangaPage = ({
           </div>
         </div>
       </div>
-      <CreateChapterDialog mangaId={mangaId} mangaTitle={title} chapter={chapter}/>
+      <CreateChapterDialog
+        mangaId={mangaId}
+        mangaTitle={title}
+        chapter={chapter}
+        onSuccess={onChapterCreated}
+      />
     </div>
   );
 };

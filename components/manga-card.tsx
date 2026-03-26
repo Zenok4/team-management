@@ -50,7 +50,7 @@ const MangaCard = ({ manga, completedChapters }: MangaCardProps) => {
         </div>
         <Progress value={progress} className="h-2" />
         <p className="mt-2 text-xs text-muted-foreground">
-          {Math.round(progress)}% hoàn thành
+          Hoàn thành {Math.round(progress)}% 
         </p>
       </CardContent>
     </Card>

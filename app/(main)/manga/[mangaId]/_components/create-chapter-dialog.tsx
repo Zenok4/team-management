@@ -19,12 +19,14 @@ interface CreateChapterDialogProps {
   mangaId?: string;
   mangaTitle?: string;
   chapter?: Chapter[];
+  onSuccess?: () => void;
 }
 
 const CreateChapterDialog = ({
   mangaId,
   mangaTitle,
   chapter,
+  onSuccess,
 }: CreateChapterDialogProps) => {
   const [open, setOpen] = useState(false);
   const [chapterNumber, setChapterNumber] = useState(0);
@@ -33,8 +35,6 @@ const CreateChapterDialog = ({
   useEffect(() => {
     // Tự động gợi ý số chương mới dựa trên số chương hiện có
     setChapterNumber(findNextChapterNumber());
-    console.log("chapter", chapter);
-    console.log("next chapter number", findNextChapterNumber());
   }, [chapter]);
 
   const resetForm = () => {
@@ -51,12 +51,12 @@ const CreateChapterDialog = ({
       title: chapterTitle,
     });
     setOpen(false);
+    onSuccess?.();
   };
 
   const findNextChapterNumber = () => {
     if (chapter && chapter.length > 0) {
       const maxNumber = Math.max(...chapter.map((ch) => ch.number || 0));
-      console.log("maxNumber", maxNumber);
       return maxNumber + 1;
     }
     return 0;

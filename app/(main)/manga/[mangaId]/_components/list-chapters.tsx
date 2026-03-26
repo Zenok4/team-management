@@ -20,6 +20,7 @@ interface ListChaptersProps {
   members?: Member[];
   mangaId?: string;
   mangaTitle?: string;
+  onTaskCreated?: () => void;
 }
 
 const ListChapters = ({
@@ -28,6 +29,7 @@ const ListChapters = ({
   members,
   mangaId,
   mangaTitle,
+  onTaskCreated,
 }: ListChaptersProps) => {
   const router = useRouter();
 
@@ -63,18 +65,19 @@ const ListChapters = ({
               <TableHead className="w-1/5">Tiêu đề</TableHead>
               <TableHead>Trạng thái</TableHead>
 
-              {roles && roles?.map((role) => (
-                <TableHead key={role.$id} className="w-1/12 text-center">
-                  <Badge
-                    style={
-                      { "--role-color": role.color } as React.CSSProperties
-                    }
-                    className="bg-(--role-color)"
-                  >
-                    {role.label}
-                  </Badge>
-                </TableHead>
-              ))}
+              {roles &&
+                roles?.map((role) => (
+                  <TableHead key={role.$id} className="w-1/12 text-center">
+                    <Badge
+                      style={
+                        { "--role-color": role.color } as React.CSSProperties
+                      }
+                      className="bg-(--role-color)"
+                    >
+                      {role.label}
+                    </Badge>
+                  </TableHead>
+                ))}
 
               <TableHead>Hành động</TableHead>
             </TableRow>
@@ -138,9 +141,7 @@ const ListChapters = ({
                             <div className="relative">
                               <Avatar className="h-8 w-8 border-2 border-background">
                                 <AvatarImage
-                                  src={
-                                    work.members?.avatar || "/heroine.jpeg"
-                                  }
+                                  src={work.members?.avatar || "/heroine.jpeg"}
                                 />
                                 <AvatarFallback>
                                   {work.members?.name?.charAt(0)}
@@ -172,11 +173,12 @@ const ListChapters = ({
                     }}
                   >
                     <AssignTaskDialog
-                      chapter={chapter}
+                      chapter={works}
                       mangaId={mangaId}
                       roles={roles}
                       members={members}
                       mangaTitle={mangaTitle}
+                      onSuccess={onTaskCreated}
                     />
                   </TableCell>
                 </TableRow>

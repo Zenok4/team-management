@@ -18,12 +18,17 @@ import { CircleX, ImagePlus, Plus } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 
-const CreateMangaForm = () => {
+interface CreateMangaFormProps {
+  onSuccess?: () => void;
+}
+
+const CreateMangaForm = ({ onSuccess }: CreateMangaFormProps) => {
+  const [open, setOpen] = useState(false);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    cover: "",
+    cover: null as File | null,
   });
 
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,6 +39,7 @@ const CreateMangaForm = () => {
         setCoverPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
+      setFormData({ ...formData, cover: file });
     }
   };
 
@@ -41,7 +47,7 @@ const CreateMangaForm = () => {
     setFormData({
       title: "",
       description: "",
-      cover: "",
+      cover: null,
     });
     setCoverPreview(null);
   };
@@ -56,6 +62,7 @@ const CreateMangaForm = () => {
       setCoverPreview(reader.result as string);
     };
     reader.readAsDataURL(file);
+    setFormData({ ...formData, cover: file });
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -65,12 +72,14 @@ const CreateMangaForm = () => {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // Thay bằng dialog thông báo
-    await createManga(formData.title, formData.description, formData.cover);
+    await createManga(formData.title, formData.description, formData.cover || undefined);
     resetForm();
+    setOpen(false);
+    onSuccess?.();
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button type="button" className="flex items-center gap-2">
           <Plus className="w-5 h-5" /> <p>Thêm truyện</p>
@@ -80,7 +89,7 @@ const CreateMangaForm = () => {
       <DialogContent>
         <form onSubmit={onSubmit}>
           <DialogHeader>
-            <DialogTitle>Thêm truyện mới</DialogTitle>
+            <DialogTitle className="pb-4">Thêm truyện mới</DialogTitle>
           </DialogHeader>
           <div className="flex gap-4 items-stretch">
             <div className="grid gap-2">

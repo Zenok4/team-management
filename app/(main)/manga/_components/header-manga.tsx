@@ -3,10 +3,13 @@
 import HeaderPage from "@/components/header-page";
 import CreateMangaForm from "./create-manga-form";
 
-const HeaderManga = () => {
+interface HeaderMangaProps {
+  onMangaCreated?: () => void;
+}
+const HeaderManga = ({ onMangaCreated }: HeaderMangaProps) => {
   return (
     <HeaderPage title="Manga" subtitle="Explore our manga collection">
-      <CreateMangaForm />
+      <CreateMangaForm onSuccess={onMangaCreated} />
     </HeaderPage>
   );
 };

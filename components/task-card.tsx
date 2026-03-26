@@ -18,7 +18,12 @@ import {
 import { Member, Role, Task } from "@/types/manga";
 import { TASK_STATUS_LABELS } from "@/types/manga";
 import { SubmitTaskDialog } from "@/app/(main)/task/_components/summit-task-dialog";
-import { reviewTask, startTask } from "@/services/task-service";
+import {
+  downloadSubmittedFiles,
+  reviewTask,
+  startTask,
+} from "@/services/task-service";
+import { downloadBinaryFile } from "@/helper/dowload-binary-file-for-client";
 
 /* ================= PROPS ================= */
 interface TaskCardProps {
@@ -65,7 +70,14 @@ export function TaskCard({
   );
 
   const handleStartTask = async (task: Task) => {
-    await startTask(task.$id);
+    const res = await startTask(task.$id);
+    if (res.zip) {
+      downloadBinaryFile(
+        new Uint8Array(res.zip.buffer),
+        res.zip.filename,
+        res.zip.contentType,
+      );
+    }
     onStatusChange?.(task.$id, "in-progress");
   };
 
@@ -83,7 +95,16 @@ export function TaskCard({
     setRejectNote("");
   };
 
-  console.log("Rendering TaskCard for role:", role); // Debug log
+  const handleDownloadSubmitted = async (task: Task) => {
+    const res = await downloadSubmittedFiles(task.$id);
+    if (res.zip) {
+      downloadBinaryFile(
+        new Uint8Array(res.zip.buffer),
+        res.zip.filename,
+        res.zip.contentType,
+      );
+    }
+  };
 
   return (
     <Card
@@ -226,38 +247,55 @@ export function TaskCard({
             </Button>
           )}
 
-          {(task.status === "in-progress" || task.status === "rejected") && role && (
-            <SubmitTaskDialog
-              role={role}
-              task={task}
-              user={user}
-              onStatusChange={onStatusChange}
-            />
-          )}
+          {(task.status === "in-progress" || task.status === "rejected") &&
+            role && (
+              <SubmitTaskDialog
+                role={role}
+                task={task}
+                user={user}
+                onStatusChange={onStatusChange}
+              />
+            )}
 
           {task.status === "submitted" && (
             <>
               {!isRejecting ? (
                 <>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1 text-green-600 hover:text-white bg-transparent"
-                    onClick={() => handleApproveTask(task)}
-                  >
-                    <CheckCircle className="h-3.5 w-3.5" />
-                    Duyệt
-                  </Button>
+                  <div className="flex w-full items-center justify-between">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1 bg-transparent cursor-pointer"
+                      disabled={task.assignedBy?.userId !== user.$id}
+                      onClick={() => handleDownloadSubmitted(task)}
+                    >
+                      <Play className="h-3.5 w-3.5" />
+                      Xem bài
+                    </Button>
+                    <div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 text-green-600 hover:text-white bg-transparent"
+                        disabled={task.assignedBy?.userId !== user.$id}
+                        onClick={() => handleApproveTask(task)}
+                      >
+                        <CheckCircle className="h-3.5 w-3.5" />
+                        Duyệt
+                      </Button>
 
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1 text-red-600 hover:text-white bg-transparent"
-                    onClick={() => setIsRejecting(true)}
-                  >
-                    <XCircle className="h-3.5 w-3.5" />
-                    Yêu cầu sửa
-                  </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 text-red-600 hover:text-white bg-transparent"
+                        disabled={task.assignedBy?.userId !== user.$id}
+                        onClick={() => setIsRejecting(true)}
+                      >
+                        <XCircle className="h-3.5 w-3.5" />
+                        Yêu cầu sửa
+                      </Button>
+                    </div>
+                  </div>
                 </>
               ) : (
                 <div className="flex flex-col gap-2 w-full">
