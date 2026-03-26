@@ -103,10 +103,10 @@ const ChapterContent = ({
                 </div>
               )}
 
-              {chapter.createdAt && (
+              {chapter.$createdAt && (
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
-                  <span>Tạo: {chapter.createdAt}</span>
+                  <span>Tạo: {chapter.$createdAt}</span>
                 </div>
               )}
 
@@ -154,8 +154,6 @@ const ChapterContent = ({
                   const work = worksOfChapter.find(
                     (w) => w.roles?.$id === role.$id,
                   );
-
-                  console.log("Work for role", role.label, work);
 
                   const member = work?.members;
 
@@ -220,7 +218,7 @@ const ChapterContent = ({
                   return (
                     <div key={task.$id} className="p-3 border rounded-lg">
                       <div className="flex justify-between mb-2">
-                        <Badge>{task.role}</Badge>
+                        <Badge>{task.role.label}</Badge>
                         <Badge className={cfg.className}>
                           <Icon className="mr-1 h-3 w-3" />
                           {cfg.label}

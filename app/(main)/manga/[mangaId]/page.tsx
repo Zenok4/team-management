@@ -9,8 +9,6 @@ interface MangaDetailPageProps {
 const MangaDetailPage = async ({ params }: MangaDetailPageProps) => {
   const { mangaId } = await params;
 
-  console.log("MangaDetailPage mangaId:", mangaId);
-
   // 1. Fetch DB
   // const manga = await getMangaById(mangaId);
 

@@ -29,7 +29,6 @@ const LoginClient = () => {
 
       if (!user) throw new Error("Login failed");
 
-      console.log("Đăng nhập thành công")
       router.push("/");
     } catch (err: any) {
       setError("Sai email hoặc mật khẩu");

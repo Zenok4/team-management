@@ -87,7 +87,6 @@ const ListChapters = ({
           <TableBody>
             {groupedChapters.map(([chapterId, works]) => {
               const chapter = works[0]; // đại diện chapter
-              console.log("Chapter:", chapter);
 
               return (
                 <TableRow
@@ -131,8 +130,6 @@ const ListChapters = ({
                   {/* ===== ROLES ===== */}
                   {roles?.map((role) => {
                     const work = works.find((w) => w.roles?.$id === role.$id);
-
-                    console.log(`Work for role ${role.label}:`, work);
 
                     return (
                       <TableCell key={role.$id}>

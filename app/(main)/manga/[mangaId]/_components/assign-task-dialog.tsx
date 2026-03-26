@@ -77,7 +77,6 @@ const AssignTaskDialog = ({
 
     return true;
   });
-  console.log({ chapter });
 
   //lọc ra các member có thể chọn (có role phù hợp)
   const availableMembers = members?.filter((member) => {

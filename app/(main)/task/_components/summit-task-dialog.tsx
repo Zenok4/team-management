@@ -62,8 +62,6 @@ export function SubmitTaskDialog({
     setOpen(false);
   };
 
-  console.log({ task, user });
-
   /* ================= RENDER ================= */
   return (
     <Dialog open={open} onOpenChange={setOpen}>

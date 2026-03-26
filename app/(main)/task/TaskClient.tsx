@@ -24,11 +24,6 @@ const TaskClient = () => {
         getRoles(),
       ]);
 
-      console.log("tasksData", tasksData);
-      console.log("membersData", membersData);
-      console.log("mangaData", mangaData);
-      console.log("rolesData", rolesData);
-
       setTasks(tasksData);
       setMembers(membersData);
       setManga(mangaData);
