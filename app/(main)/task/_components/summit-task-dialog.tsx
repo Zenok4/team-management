@@ -127,7 +127,7 @@ export function SubmitTaskDialog({
           <div className="space-y-2">
             <Label>File đính kèm</Label>
 
-            <div className="space-y-2">
+            <div className="space-y-2 max-w-24 overflow-y-scroll">
               {files.map((file, index) => (
                 <div
                   key={index}

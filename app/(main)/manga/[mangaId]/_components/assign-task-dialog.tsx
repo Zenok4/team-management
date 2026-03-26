@@ -312,7 +312,7 @@ const AssignTaskDialog = ({
             </Button>
 
             {taskFiles.length > 0 && (
-              <div className="space-y-2">
+              <div className="space-y-2 max-h-24 overflow-y-scroll">
                 {taskFiles.map((file, index) => (
                   <div
                     key={index}
