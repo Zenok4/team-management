@@ -15,7 +15,6 @@ import { Badge } from "@/components/ui/badge";
 import { Upload, FileText, X } from "lucide-react";
 
 import { Member, Role, Task } from "@/types/manga";
-import { MOCK_ROLES } from "@/mock/mock-data";
 import { submitTask } from "@/services/task-service";
 import { Input } from "@/components/ui/input";
 
